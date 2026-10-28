@@ -200,5 +200,21 @@ class ItemsTestCase(unittest.TestCase):
         self.assertEqual(missing_resp.status_code, 302)
         self.assertIn("/static/images/placeholder.svg", missing_resp.headers["Location"])
 
+    def test_uploaded_image_redirects_to_public_supabase_storage(self):
+        self.app.config.update(
+            SUPABASE_URL="https://project.supabase.co",
+            SUPABASE_SECRET_KEY="server-only-secret",
+            SUPABASE_STORAGE_BUCKET="item-images",
+        )
+
+        response = self.client.get("/uploads/photo.png")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.headers["Location"],
+            "https://project.supabase.co/storage/v1/object/public/item-images/photo.png",
+        )
+        self.assertNotIn("server-only-secret", response.headers["Location"])
+
 if __name__ == "__main__":
     unittest.main()

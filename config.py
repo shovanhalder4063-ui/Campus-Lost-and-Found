@@ -13,6 +13,9 @@ class Config:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 Megabytes maximum upload size
+    SUPABASE_URL = os.environ.get("SUPABASE_URL")
+    SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
+    SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "item-images")
 
     # AI Matching configuration
     MATCH_MIN_SIMILARITY_SCORE = 0.15  # Minimum score (15%) to be considered a potential match

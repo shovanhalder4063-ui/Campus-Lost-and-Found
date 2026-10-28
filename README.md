@@ -72,7 +72,7 @@ d:\Lost&found\
 │   │   └── main.js            # Vanilla JS: tabs, mobile menu, image preview, alerts
 │   └── images/
 │       └── placeholder.svg    # Clean SVG fallback placeholder for items without photos
-├── uploads/                   # Local directory for user-uploaded photographs
+├── uploads/                   # Local development storage for user-uploaded photographs
 ├── tests/
 │   ├── __init__.py
 │   ├── test_auth.py           # Unit tests for registration, login, logout, password hashing
@@ -218,6 +218,7 @@ OK
 - **Password Hashing**: Passwords are never stored in plaintext. They are salted and cryptographically hashed using Werkzeug's `generate_password_hash` (`scrypt` / `pbkdf2:sha256`).
 - **CSRF Protection**: All forms utilize Flask-WTF CSRF tokens to protect against cross-site request forgery.
 - **Safe File Uploads**: Image uploads are strictly checked for valid extensions (`.png`, `.jpg`, `.jpeg`, `.webp`), capped at 5MB, inspected using Pillow to verify image headers, and saved with randomized UUID filenames (`uuid4().hex`) to prevent path traversal attacks.
+- **Persistent Image Storage**: Production uploads are stored in a public Supabase Storage bucket. Create a bucket named `item-images` (or configure `SUPABASE_STORAGE_BUCKET`) and set `SUPABASE_URL` plus the server-side `SUPABASE_SECRET_KEY` in Render. The secret key must never be exposed in browser code or committed to Git. Item photos are publicly viewable, just like item listings.
 - **Authorization Enforcement**: URL manipulation cannot allow User B to edit or delete User A's reports; server-side permission checks return an HTTP 403 Forbidden.
 - **Privacy Protection**: Direct contact details and confidential identifying marks are never exposed on public endpoints.
 - **Production Configuration**: Production startup requires a strong `SECRET_KEY` (at least 32 characters) and a configured `DATABASE_URL`; session cookies use secure, HTTP-only, same-site settings. Never use the demo or development credentials in production.
@@ -231,5 +232,8 @@ Set these variables in the production process or hosting platform; do not use th
 $env:SECRET_KEY = python -c "import secrets; print(secrets.token_hex(32))"
 $env:DATABASE_URL = "<your production SQLAlchemy database URL>"
 $env:FLASK_ENV = "production"
+$env:SUPABASE_URL = "<your Supabase project URL>"
+$env:SUPABASE_SECRET_KEY = "<your Supabase secret key>"
+$env:SUPABASE_STORAGE_BUCKET = "item-images"
 ```
 Use a production WSGI server to serve the app. `python app.py` intentionally refuses to start when the app is configured for production.

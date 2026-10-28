@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
+import mimetypes
 from PIL import Image as PILImage
 
 from flask import (
@@ -37,6 +38,12 @@ from forms import (
     CAMPUS_LOCATIONS,
 )
 from services.matching import get_item_matches, ItemMatcher
+from services.storage import (
+    StorageError,
+    is_storage_configured,
+    public_image_url,
+    upload_image_to_storage,
+)
 
 
 def is_safe_image_file(file_storage) -> bool:
@@ -68,8 +75,19 @@ def save_uploaded_image(file_storage, upload_folder) -> str | None:
     if not is_safe_image_file(file_storage):
         return None
 
-    os.makedirs(upload_folder, exist_ok=True)
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
+    if is_storage_configured(current_app.config):
+        image_bytes = file_storage.read()
+        content_type = mimetypes.guess_type(unique_filename)[0] or "application/octet-stream"
+        upload_image_to_storage(
+            current_app.config,
+            unique_filename,
+            image_bytes,
+            content_type,
+        )
+        return unique_filename
+
+    os.makedirs(upload_folder, exist_ok=True)
     target_path = os.path.join(upload_folder, unique_filename)
     file_storage.save(target_path)
     return unique_filename
@@ -89,6 +107,11 @@ def create_app(config_name="default"):
             raise RuntimeError("Production requires a strong SECRET_KEY of at least 32 characters.")
         if not app.config.get("SQLALCHEMY_DATABASE_URI"):
             raise RuntimeError("Production requires DATABASE_URL to be configured.")
+        if not is_storage_configured(app.config):
+            app.logger.warning(
+                "Supabase Storage is not configured; uploaded images will use "
+                "Render's temporary local filesystem until storage is configured."
+            )
 
     # Ensure required runtime folders exist
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -262,8 +285,14 @@ def create_app(config_name="default"):
 
     @app.route("/uploads/<filename>")
     def uploaded_file(filename):
-        """Safely serve user-uploaded photographs with directory traversal checks."""
+        """Serve stored photographs or redirect to their public Supabase Storage URL."""
         safe_name = secure_filename(filename)
+        if safe_name != filename:
+            return redirect(url_for("static", filename="images/placeholder.svg"))
+
+        if is_storage_configured(app.config):
+            return redirect(public_image_url(app.config, safe_name))
+
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_name)
         if not os.path.isfile(file_path):
             return redirect(url_for("static", filename="images/placeholder.svg"))
@@ -355,7 +384,12 @@ def create_app(config_name="default"):
         if form.validate_on_submit():
             image_filename = None
             if form.image.data and hasattr(form.image.data, "filename") and form.image.data.filename:
-                image_filename = save_uploaded_image(form.image.data, app.config["UPLOAD_FOLDER"])
+                try:
+                    image_filename = save_uploaded_image(form.image.data, app.config["UPLOAD_FOLDER"])
+                except StorageError:
+                    current_app.logger.exception("Supabase Storage image upload failed.")
+                    flash("Image upload failed. Please try again later.", "danger")
+                    return render_template("report_item.html", form=form, report_type=default_type)
                 if not image_filename and form.image.data.filename:
                     flash("Invalid or corrupted image file. Please upload a valid PNG, JPG, or WebP image.", "danger")
                     return render_template("report_item.html", form=form, report_type=default_type)
@@ -394,7 +428,12 @@ def create_app(config_name="default"):
         if form.validate_on_submit():
             new_image = None
             if form.image.data and getattr(form.image.data, "filename", ""):
-                new_image = save_uploaded_image(form.image.data, app.config["UPLOAD_FOLDER"])
+                try:
+                    new_image = save_uploaded_image(form.image.data, app.config["UPLOAD_FOLDER"])
+                except StorageError:
+                    current_app.logger.exception("Supabase Storage image upload failed.")
+                    flash("Image upload failed. Please try again later.", "danger")
+                    return render_template("edit_item.html", form=form, item=item)
                 if not new_image:
                     flash(
                         "Invalid or corrupted image file. Please upload a valid PNG, JPG, or WebP image.",
