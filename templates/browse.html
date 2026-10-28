@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Lost &amp; Found Campus Listings{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2rem;">
+  
+  <!-- Page Header -->
+  <div class="browse-header-row">
+    <div>
+      <div class="hero-live-pill" style="margin-bottom: 0.5rem;">
+        <i data-lucide="compass" style="width: 13px; height: 13px;"></i>
+        <span>Campus Directory</span>
+      </div>
+      <h1 class="section-title">Browse Campus Listings</h1>
+      <p class="section-desc">Search, filter, and discover active lost and found reports across campus facilities</p>
+    </div>
+    <div class="header-action-group">
+      <a href="{{ url_for('report_lost') }}" class="btn btn-sm btn-outline-lost">
+        <i data-lucide="plus"></i> <span>Report Lost</span>
+      </a>
+      <a href="{{ url_for('report_found') }}" class="btn btn-sm btn-primary">
+        <i data-lucide="plus"></i> <span>Report Found</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar Card -->
+  <div class="filter-card">
+    <form action="{{ url_for('browse') }}" method="GET">
+      <div class="filter-grid">
+        
+        <!-- Keyword Search -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="q">Search Keywords</label>
+          <div class="input-icon-wrapper">
+            <i data-lucide="search" class="field-icon"></i>
+            <input 
+              type="text" 
+              name="q" 
+              id="q" 
+              class="form-control with-icon" 
+              placeholder="Title, model, brand, tag..." 
+              value="{{ current_q }}"
+            >
+          </div>
+        </div>
+
+        <!-- Report Type -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="type">Listing Type</label>
+          <div class="select-wrapper">
+            <select name="type" id="type" class="form-select">
+              <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
+              <option value="lost" {% if current_type == 'lost' %}selected{% endif %}>Lost Only</option>
+              <option value="found" {% if current_type == 'found' %}selected{% endif %}>Found Only</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="category">Category</label>
+          <div class="select-wrapper">
+            <select name="category" id="category" class="form-select">
+              <option value="">All Categories</option>
+              {% for cat_val, cat_label in categories %}
+                <option value="{{ cat_val }}" {% if current_category == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+              {% endfor %}
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Campus Location -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="location">Location</label>
+          <div class="input-icon-wrapper">
+            <i data-lucide="map-pin" class="field-icon"></i>
+            <input 
+              type="text" 
+              name="location" 
+              id="location" 
+              class="form-control with-icon" 
+              placeholder="e.g. Library, Lab 3" 
+              value="{{ current_location }}"
+            >
+          </div>
+        </div>
+
+        <!-- Sort By -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="sort">Sort By</label>
+          <div class="select-wrapper">
+            <select name="sort" id="sort" class="form-select">
+              <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest First</option>
+              <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <!-- Filter Submit & Reset -->
+        <div class="filter-actions-col">
+          <button type="submit" class="btn btn-primary" title="Apply Filters">
+            <i data-lucide="filter"></i> <span>Filter</span>
+          </button>
+          <a href="{{ url_for('browse') }}" class="btn btn-secondary" title="Reset All Filters">
+            <i data-lucide="rotate-ccw"></i>
+          </a>
+        </div>
+
+      </div>
+    </form>
+
+    <!-- Active Filters Summary Chips -->
+    {% if current_q or current_category or current_location or current_type != 'all' %}
+      <div class="active-filter-chips-row">
+        <span class="active-filters-label">Active filters:</span>
+        {% if current_q %}
+          <a href="{{ url_for('browse', type=current_type, category=current_category, location=current_location, sort=current_sort) }}" class="active-filter-pill">
+            <span>Keyword: "{{ current_q }}"</span> &times;
+          </a>
+        {% endif %}
+        {% if current_type != 'all' %}
+          <a href="{{ url_for('browse', q=current_q, category=current_category, location=current_location, sort=current_sort) }}" class="active-filter-pill">
+            <span>Type: {{ current_type|capitalize }}</span> &times;
+          </a>
+        {% endif %}
+        {% if current_category %}
+          <a href="{{ url_for('browse', q=current_q, type=current_type, location=current_location, sort=current_sort) }}" class="active-filter-pill">
+            <span>Category: {{ current_category }}</span> &times;
+          </a>
+        {% endif %}
+        {% if current_location %}
+          <a href="{{ url_for('browse', q=current_q, type=current_type, category=current_category, sort=current_sort) }}" class="active-filter-pill">
+            <span>Location: {{ current_location }}</span> &times;
+          </a>
+        {% endif %}
+        <a href="{{ url_for('browse') }}" class="clear-all-link">Clear all</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Listings Result Grid -->
+  {% if items %}
+    <div class="results-meta-bar">
+      <span>Showing <strong>{{ items|length }}</strong> of <strong>{{ pagination.total }}</strong> item reports</span>
+      <span class="badge badge-secondary" style="font-weight: 500;">
+        <i data-lucide="check" style="width: 12px; height: 12px;"></i> Verified Active Listings
+      </span>
+    </div>
+
+    <div class="items-grid">
+      {% for item in items %}
+        <article class="item-card">
+          <div class="item-card-image-wrapper">
+            <span class="badge {% if item.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %} item-card-type-badge">
+              <span class="badge-dot"></span> {{ item.report_type|capitalize }}
+            </span>
+            <span class="badge {{ item.status_badge_class }} item-card-status-badge">
+              {{ item.status.replace('_', ' ') }}
+            </span>
+            <img 
+              src="{% if item.image_filename %}{{ url_for('uploaded_file', filename=item.image_filename) }}{% else %}{{ url_for('static', filename='images/placeholder.svg') }}{% endif %}" 
+              alt="{{ item.title }}" 
+              class="item-card-image{% if not item.image_filename %} is-placeholder{% endif %}"
+              loading="lazy"
+              onerror="this.onerror=null; this.classList.add('is-placeholder'); this.src='{{ url_for('static', filename='images/placeholder.svg') }}';"
+            >
+          </div>
+          
+          <div class="item-card-body">
+            <div class="item-card-category-row">
+              <span class="item-card-category">{{ item.category }}</span>
+            </div>
+            <h3 class="item-card-title">
+              <a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.title }}</a>
+            </h3>
+            <p class="item-card-desc">{{ item.description }}</p>
+
+            <div class="item-card-meta">
+              <div class="item-card-meta-row">
+                <i data-lucide="map-pin"></i>
+                <span>{{ item.location }}</span>
+              </div>
+              <div class="item-card-meta-row">
+                <i data-lucide="calendar"></i>
+                <span>{{ item.report_type|capitalize }} {{ item.incident_date.strftime('%b %d, %Y') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item-card-footer">
+            <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-secondary btn-block btn-sm">
+              <span>View Full Details</span>
+              <i data-lucide="chevron-right"></i>
+            </a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination.pages > 1 %}
+      <div class="pagination-wrapper">
+        {% if pagination.has_prev %}
+          <a href="{{ url_for('browse', page=pagination.prev_num, q=current_q, type=current_type, category=current_category, location=current_location, sort=current_sort) }}" class="btn btn-secondary btn-sm">
+            <i data-lucide="chevron-left"></i> Previous
+          </a>
+        {% else %}
+          <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.5; cursor: not-allowed;">
+            <i data-lucide="chevron-left"></i> Previous
+          </button>
+        {% endif %}
+
+        <span class="pagination-indicator">
+          Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong>
+        </span>
+
+        {% if pagination.has_next %}
+          <a href="{{ url_for('browse', page=pagination.next_num, q=current_q, type=current_type, category=current_category, location=current_location, sort=current_sort) }}" class="btn btn-secondary btn-sm">
+            Next <i data-lucide="chevron-right"></i>
+          </a>
+        {% else %}
+          <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.5; cursor: not-allowed;">
+            Next <i data-lucide="chevron-right"></i>
+          </button>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon-box">
+        <i data-lucide="search-x"></i>
+      </div>
+      <h3 class="empty-title">No Listings Match Your Filters</h3>
+      <p class="empty-desc">
+        We couldn't find any reports matching your search parameters. Try adjusting keywords, changing categories, or clearing your active filters.
+      </p>
+      <a href="{{ url_for('browse') }}" class="btn btn-secondary btn-sm">
+        <i data-lucide="rotate-ccw"></i> Clear All Filters
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

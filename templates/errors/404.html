@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found (404){% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 520px; padding-top: 4rem; text-align: center;">
+
+  <div class="empty-icon-box" style="width: 4.5rem; height: 4.5rem; background-color: #FEF2F2; color: #991B1B;">
+    <i data-lucide="file-question" style="width: 32px; height: 32px;"></i>
+  </div>
+
+  <h1 style="font-size: 2.25rem; font-weight: 800; margin-bottom: 0.5rem;">404 - Listing Not Found</h1>
+  <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">
+    The page or item listing you are looking for doesn't exist, has been removed, or moved to a different location.
+  </p>
+
+  <div style="display: flex; justify-content: center; gap: 1rem;">
+    <a href="{{ url_for('browse') }}" class="btn btn-primary">
+      <i data-lucide="search" style="width: 14px; height: 14px;"></i> Browse All Items
+    </a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+      <i data-lucide="home" style="width: 14px; height: 14px;"></i> Return to Homepage
+    </a>
+  </div>
+
+</div>
+{% endblock %}

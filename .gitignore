@@ -1,0 +1,30 @@
+# Environment Variables
+.env
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+
+# SQLite Database
+instance/
+*.db
+*.sqlite3
+
+# Uploaded User Files (keep placeholder)
+uploads/*
+!uploads/.gitkeep
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

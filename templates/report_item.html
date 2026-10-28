@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Report a {{ report_type|capitalize }} Item - Campus Lost &amp; Found{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 780px; padding-top: 2rem;">
+
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('browse') }}" class="btn btn-sm btn-secondary">
+      <i data-lucide="arrow-left"></i> <span>Back to Listings</span>
+    </a>
+  </div>
+
+  <div class="form-container-card">
+    
+    <div class="form-card-header">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+        <span class="badge {% if report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+          <span class="badge-dot"></span> {{ report_type|capitalize }} Report
+        </span>
+      </div>
+      <h1 class="form-card-title">
+        {% if report_type == 'lost' %}
+          Report a Lost Belonging
+        {% else %}
+          Report a Found Item
+        {% endif %}
+      </h1>
+      <p class="form-card-subtitle">
+        {% if report_type == 'lost' %}
+          Provide accurate details about what you misplaced. Our local similarity engine will automatically compare it with found reports across campus.
+        {% else %}
+          Help a fellow student by registering an item you discovered on campus. Keep sensitive identifying marks private to verify genuine owners.
+        {% endif %}
+      </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+
+      <!-- Report Type (Hidden) -->
+      <div class="form-group" style="display: none;">
+        {{ form.report_type }}
+      </div>
+
+      <!-- Item Title -->
+      <div class="form-group">
+        <label class="form-label" for="title">
+          {{ form.title.label.text }} <span class="required-star">*</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i data-lucide="type" class="field-icon"></i>
+          {{ form.title(class="form-control with-icon", placeholder="e.g., Matte Black Dell Laptop Charger 65W") }}
+        </div>
+        {% if form.title.errors %}
+          {% for error in form.title.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+        <span class="form-help">Be specific: mention brand, model, and item type (e.g., "Navy Blue Herschel Backpack" rather than just "Bag").</span>
+      </div>
+
+      <!-- Category & Incident Date -->
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="category">
+            {{ form.category.label.text }} <span class="required-star">*</span>
+          </label>
+          <div class="select-wrapper">
+            {{ form.category(class="form-select") }}
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+          {% if form.category.errors %}
+            {% for error in form.category.errors %}
+              <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="incident_date">
+            {% if report_type == 'lost' %}Date Lost{% else %}Date Found{% endif %} <span class="required-star">*</span>
+          </label>
+          <div class="input-icon-wrapper">
+            <i data-lucide="calendar" class="field-icon"></i>
+            {{ form.incident_date(class="form-control with-icon", type="date") }}
+          </div>
+          {% if form.incident_date.errors %}
+            {% for error in form.incident_date.errors %}
+              <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Campus Location -->
+      <div class="form-group">
+        <label class="form-label" for="location">
+          {{ form.location.label.text }} <span class="required-star">*</span>
+        </label>
+        <div class="input-icon-wrapper">
+          <i data-lucide="map-pin" class="field-icon"></i>
+          {{ form.location(class="form-control with-icon", placeholder="e.g. Central Library 2nd Floor Reading Room, Cafeteria North Bench") }}
+        </div>
+        {% if form.location.errors %}
+          {% for error in form.location.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+        <span class="form-help">Specify classroom number, building wing, floor, or cafeteria area to help the AI match location keywords.</span>
+      </div>
+
+      <!-- Public Description -->
+      <div class="form-group">
+        <label class="form-label" for="description">
+          {{ form.description.label.text }} <span class="required-star">*</span>
+        </label>
+        {{ form.description(class="form-control", placeholder="Describe the color, brand, condition, and any external markings that help identify it...") }}
+        {% if form.description.errors %}
+          {% for error in form.description.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+        <span class="form-help">Public details: describe physical appearance clearly. Do not put passwords or private serial numbers here.</span>
+      </div>
+
+      <!-- Image Upload with Live Preview Box -->
+      <div class="form-group">
+        <label class="form-label" for="image">{{ form.image.label.text }}</label>
+        <div class="file-upload-dropzone">
+          <div class="dropzone-content">
+            <div class="dropzone-icon">
+              <i data-lucide="camera"></i>
+            </div>
+            <div class="dropzone-text">
+              <strong>Click to upload photograph</strong> or drag and drop
+            </div>
+            <div class="dropzone-subtext">JPG, PNG, WebP up to 5MB</div>
+          </div>
+          {{ form.image(class="file-input-hidden", id="image") }}
+        </div>
+        {% if form.image.errors %}
+          {% for error in form.image.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+        
+        <!-- Live Image Preview Container -->
+        <div id="imagePreviewContainer" class="image-preview-wrapper" style="display: none;">
+          <div class="preview-thumbnail-box">
+            <img id="imagePreviewImg" src="" alt="Preview">
+          </div>
+          <div class="preview-meta-info">
+            <span class="preview-label">Selected photograph preview</span>
+            <span class="preview-help">Image verified and ready for upload</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confidential Identifying Details Box -->
+      <div class="confidential-form-card">
+        <div class="confidential-form-header">
+          <div class="confidential-icon-pill">
+            <i data-lucide="lock"></i>
+          </div>
+          <div>
+            <div class="confidential-title">Private Ownership Verification Vault (Confidential)</div>
+            <div class="confidential-subtitle">NEVER DISPLAYED ON THE PUBLIC WEBSITE</div>
+          </div>
+        </div>
+        <p class="confidential-explainer">
+          <strong>Security Notice:</strong> Information typed here is stored securely and hidden from all public browse pages and search queries. Record secret marks like serial numbers, engraved initials, specific lockscreen wallpaper, or hidden stickers. You will use these notes to confirm that a claimant is the true owner.
+        </p>
+        {{ form.private_details(class="form-control confidential-textarea", placeholder="🔒 e.g. Serial # ends in 4082, small scratch on top left corner, lockscreen photo is a husky...") }}
+        {% if form.private_details.errors %}
+          {% for error in form.private_details.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Submit & Cancel Actions -->
+      <div class="form-action-row">
+        <button type="submit" class="btn btn-lg {% if report_type == 'lost' %}btn-danger-soft{% else %}btn-primary{% endif %}">
+          <i data-lucide="send"></i> <span>Publish Report</span>
+        </button>
+        <a href="{{ url_for('browse') }}" class="btn btn-lg btn-secondary">Cancel</a>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

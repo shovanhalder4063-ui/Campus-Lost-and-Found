@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} - Item Details{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2rem;">
+
+  <!-- Breadcrumbs & Navigation -->
+  <div class="detail-nav-bar">
+    <a href="{{ url_for('browse') }}" class="btn btn-sm btn-secondary">
+      <i data-lucide="arrow-left"></i> <span>Back to Listings</span>
+    </a>
+    <div class="detail-nav-crumbs">
+      <a href="{{ url_for('index') }}">Home</a>
+      <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+      <a href="{{ url_for('browse') }}">Browse</a>
+      <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+      <span>{{ item.category }}</span>
+      <i data-lucide="chevron-right" style="width: 12px; height: 12px;"></i>
+      <span class="active-crumb">Item #{{ item.id }}</span>
+    </div>
+  </div>
+
+  <div class="detail-layout">
+    
+    <!-- Left Column: Item Image & Poster Overview -->
+    <div class="detail-sidebar">
+      <div class="detail-gallery">
+        <div class="detail-image-box">
+          <img 
+            src="{% if item.image_filename %}{{ url_for('uploaded_file', filename=item.image_filename) }}{% else %}{{ url_for('static', filename='images/placeholder.svg') }}{% endif %}" 
+            alt="{{ item.title }}"
+            class="{% if not item.image_filename %}is-placeholder{% endif %}"
+            onerror="this.onerror=null; this.classList.add('is-placeholder'); this.src='{{ url_for('static', filename='images/placeholder.svg') }}';"
+          >
+        </div>
+      </div>
+
+      <!-- Reporter Trust & Privacy Card -->
+      <div class="reporter-card">
+        <div class="reporter-header">
+          <div class="user-avatar large">
+            {{ item.poster.name[:1]|upper }}
+          </div>
+          <div>
+            <div class="reporter-name">{{ item.poster.safe_display_name }}</div>
+            <div class="reporter-meta">Campus Student &bull; Joined {{ item.poster.created_at.strftime('%b %Y') }}</div>
+          </div>
+        </div>
+
+        <div class="reporter-trust-badges">
+          <span class="trust-badge"><i data-lucide="user-round"></i> Student Account</span>
+          <span class="trust-badge"><i data-lucide="lock"></i> Private Contact</span>
+        </div>
+
+        <p class="reporter-note">
+          Direct telephone numbers and emails are hidden to prevent harassment. Handover is coordinated safely through the verification workflow below.
+        </p>
+      </div>
+
+      <!-- Owner Action Controls Panel -->
+      {% if is_owner or is_admin %}
+        <div class="owner-panel">
+          <div class="owner-panel-header">
+            <i data-lucide="sliders" style="width: 16px; height: 16px; color: var(--primary);"></i>
+            <h4>Listing Management</h4>
+          </div>
+          
+          <div class="owner-panel-actions">
+            <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-secondary btn-sm btn-block">
+              <i data-lucide="edit-3"></i> <span>Edit Listing Details</span>
+            </a>
+
+            <!-- Quick Status Change Form -->
+            <form action="{{ url_for('update_item_status', item_id=item.id) }}" method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="form-label" style="font-size: 0.8rem; margin-top: 0.5rem;">Update Current Status:</label>
+              <div style="display: flex; gap: 0.4rem;">
+                <select name="status" class="form-select" style="font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+                  <option value="active" {% if item.status == 'active' %}selected{% endif %}>Active</option>
+                  <option value="pending_return" {% if item.status == 'pending_return' %}selected{% endif %}>Pending Return</option>
+                  <option value="resolved" {% if item.status == 'resolved' %}selected{% endif %}>Reunited / Resolved 🎉</option>
+                  <option value="closed" {% if item.status == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              </div>
+            </form>
+
+            <form action="{{ url_for('delete_item', item_id=item.id) }}" method="POST" style="margin-top: 0.75rem;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger-soft btn-sm btn-block" data-confirm="Are you sure you want to permanently delete this listing? All submitted claims will be removed.">
+                <i data-lucide="trash-2"></i> <span>Delete Listing</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right Column: Details, Confidential Notes, Claims & AI Matches -->
+    <div class="detail-main-column">
+      <div class="detail-content-card">
+        
+        <div class="detail-header">
+          <div class="detail-badges">
+            <span class="badge {% if item.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+              <span class="badge-dot"></span> {{ item.report_type|capitalize }} Item
+            </span>
+            <span class="badge {{ item.status_badge_class }}">
+              {{ item.status.replace('_', ' ')|capitalize }}
+            </span>
+            <span class="badge badge-secondary">
+              <i data-lucide="tag" style="width: 12px; height: 12px;"></i> {{ item.category }}
+            </span>
+          </div>
+
+          <h1 class="detail-title">{{ item.title }}</h1>
+
+          <div class="detail-meta-strip">
+            <div class="detail-meta-item">
+              <i data-lucide="map-pin" class="meta-icon"></i>
+              <span><strong>Location:</strong> {{ item.location }}</span>
+            </div>
+            <div class="detail-meta-item">
+              <i data-lucide="calendar" class="meta-icon"></i>
+              <span><strong>Incident Date:</strong> {{ item.incident_date.strftime('%B %d, %Y') }}</span>
+            </div>
+            <div class="detail-meta-item">
+              <i data-lucide="clock" class="meta-icon"></i>
+              <span>Reported {{ item.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-description-section">
+          <h3 class="detail-section-title">Public Description</h3>
+          <p class="detail-text">{{ item.description }}</p>
+        </div>
+
+        <!-- Confidential Verification Details (Visible ONLY to Poster & Admin) -->
+        {% if is_owner or is_admin %}
+          <div class="confidential-box">
+            <div class="confidential-box-header">
+              <div class="confidential-icon-pill">
+                <i data-lucide="lock"></i>
+              </div>
+              <div>
+                <span class="confidential-heading-text">Private Ownership Verification Vault</span>
+                <span class="confidential-sub-badge">CONFIDENTIAL &bull; HIDDEN FROM PUBLIC</span>
+              </div>
+            </div>
+            <p class="confidential-box-text">
+              {% if item.private_details %}
+                {{ item.private_details }}
+              {% else %}
+                <em>No private verification marks were entered for this item.</em>
+              {% endif %}
+            </p>
+            <div class="confidential-footer-note">
+              <i data-lucide="shield" style="width: 13px; height: 13px;"></i>
+              <span>Only you and campus administrators can see this. Compare incoming claims against these notes before approving handovers.</span>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Claim Action Section -->
+        <div class="claim-interaction-section">
+          
+          {% if not current_user.is_authenticated %}
+            <div class="auth-prompt-card">
+              <div class="auth-prompt-icon">
+                <i data-lucide="help-circle"></i>
+              </div>
+              <h4 class="auth-prompt-title">Do you recognize or own this item?</h4>
+              <p class="auth-prompt-desc">
+                Sign in to submit an ownership claim and verify specific identifying features with the poster.
+              </p>
+              <a href="{{ url_for('login', next=request.path) }}" class="btn btn-primary">
+                <i data-lucide="log-in"></i> <span>Sign In to File a Claim</span>
+              </a>
+            </div>
+
+          {% elif is_owner %}
+            <!-- Poster view of incoming claims -->
+            <div class="owner-claims-container">
+              <div class="claims-header-row">
+                <h3 class="detail-section-title" style="margin: 0;">
+                  Incoming Ownership Claims ({{ claims|length }})
+                </h3>
+                <span class="badge badge-secondary">Verification Requests</span>
+              </div>
+              
+              {% if claims %}
+                <div class="claims-list">
+                  {% for c in claims %}
+                    <div class="claim-card">
+                      <div class="claim-header">
+                        <div class="claimant-profile">
+                          <div class="user-avatar small">{{ c.claimant.name[:1]|upper }}</div>
+                          <div>
+                            <span class="claim-author">{{ c.claimant.safe_display_name }}</span>
+                            <span class="claim-date">&bull; {{ c.created_at.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                          </div>
+                        </div>
+                        <span class="badge {{ c.status_badge_class }}">{{ c.status|capitalize }}</span>
+                      </div>
+                      
+                      <div class="claim-message-bubble">
+                        <div class="claim-label">Claimant's Proof Statement:</div>
+                        {{ c.message }}
+                      </div>
+
+                      {% if c.status == 'pending' %}
+                        <div class="claim-actions">
+                          <form action="{{ url_for('manage_claim', claim_id=c.id, action='approve') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                              <i data-lucide="check"></i> <span>Approve Claim</span>
+                            </button>
+                          </form>
+                          
+                          <form action="{{ url_for('manage_claim', claim_id=c.id, action='reject') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger-soft btn-sm" data-confirm="Are you sure you want to reject this claim?">
+                              <i data-lucide="x"></i> <span>Reject</span>
+                            </button>
+                          </form>
+                        </div>
+                      {% elif c.status == 'approved' and item.status != 'resolved' %}
+                        <div class="claim-approved-banner">
+                          <div class="approved-text">
+                            <i data-lucide="check-circle" style="width: 16px; height: 16px; color: var(--accent-found);"></i>
+                            <span>Claim approved! Coordinate safe in-person collection, then confirm handover:</span>
+                          </div>
+                          <form action="{{ url_for('manage_claim', claim_id=c.id, action='resolve') }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                              <i data-lucide="smile"></i> <span>Confirm Handover &bull; Mark Reunited</span>
+                            </button>
+                          </form>
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="empty-state-subtle">
+                  <i data-lucide="inbox" style="width: 28px; height: 28px; color: var(--text-light); margin-bottom: 0.5rem;"></i>
+                  <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">
+                    No ownership claims submitted for this item yet. As students identify it, claims will appear here.
+                  </p>
+                </div>
+              {% endif %}
+            </div>
+
+          {% else %}
+            <!-- Authenticated non-owner view: Claim Form or Existing Claim status -->
+            {% if user_claim %}
+              <div class="user-claim-status-card">
+                <div class="user-claim-header">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="send" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                    <h4 style="font-size: 1rem; font-weight: 700; margin: 0;">Your Submitted Claim</h4>
+                  </div>
+                  <span class="badge {{ user_claim.status_badge_class }}">{{ user_claim.status|capitalize }}</span>
+                </div>
+                <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                  Submitted on {{ user_claim.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </p>
+                <div class="claim-message-bubble">
+                  {{ user_claim.message }}
+                </div>
+                {% if user_claim.status == 'approved' %}
+                  <div class="user-claim-alert success">
+                    <i data-lucide="smile" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                    <div>
+                      <strong>Great news! Your claim was approved by the reporter.</strong>
+                      <div style="font-size: 0.82rem; margin-top: 0.2rem;">Please meet in a safe campus public area (such as the Central Library or Department office) to collect your item.</div>
+                    </div>
+                  </div>
+                {% elif user_claim.status == 'pending' %}
+                  <div class="user-claim-alert pending">
+                    <i data-lucide="clock" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                    <span>Your claim is currently under review by the reporter. You will be notified once they verify your details.</span>
+                  </div>
+                {% endif %}
+              </div>
+            {% elif item.status in ('resolved', 'closed') %}
+              <div class="item-resolved-notice">
+                <i data-lucide="check-circle" style="width: 22px; height: 22px; color: var(--accent-found);"></i>
+                <div>
+                  <strong>This listing has been marked as {{ item.status.replace('_', ' ') }}.</strong>
+                  <div style="font-size: 0.84rem; color: var(--text-muted);">The item has been reunited with its owner or the inquiry has concluded. New claims can no longer be filed.</div>
+                </div>
+              </div>
+            {% else %}
+              <div class="claim-submission-card">
+                <div class="claim-submission-header">
+                  <div class="claim-icon-box">
+                    <i data-lucide="hand"></i>
+                  </div>
+                  <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem;">Claim This Belonging</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+                      Provide specific proof of ownership to help the reporter verify you are the genuine owner.
+                    </p>
+                  </div>
+                </div>
+
+                <form action="{{ url_for('submit_claim', item_id=item.id) }}" method="POST">
+                  {{ claim_form.csrf_token }}
+                  
+                  <div class="form-group">
+                    <label class="form-label" for="message">Detailed Proof of Ownership <span style="color: var(--accent-lost);">*</span></label>
+                    {{ claim_form.message(class="form-control") }}
+                    <span class="form-help">Mention identifying marks: serial numbers, unique scratches, wallpaper, stickers, or specific contents.</span>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">
+                    <i data-lucide="send"></i> <span>Submit Ownership Claim</span>
+                  </button>
+                </form>
+              </div>
+            {% endif %}
+
+          {% endif %}
+
+        </div>
+
+      </div>
+
+      <!-- AI Potential Matches Section -->
+      <div class="detail-ai-matches-wrapper">
+        <div class="section-header" style="margin-bottom: 1.25rem;">
+          <div>
+            <div class="hero-live-pill" style="margin-bottom: 0.35rem;">
+              <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i>
+              <span>Local Similarity Engine</span>
+            </div>
+            <h3 class="section-title" style="font-size: 1.35rem;">AI-Detected Potential Matches</h3>
+            <p class="section-desc">
+              Local scikit-learn comparisons against active {% if item.report_type == 'lost' %}found{% else %}lost{% endif %} reports across campus
+            </p>
+          </div>
+        </div>
+
+        {% if ai_matches %}
+          <div class="ai-matches-list">
+            {% for m in ai_matches %}
+              {% set cand = m.item %}
+              <div class="ai-match-card">
+                <div class="ai-match-card-inner">
+                  <div class="ai-match-card-content">
+                    
+                    <div class="ai-match-top-row">
+                      <div class="ai-score-pill">
+                        <i data-lucide="activity"></i>
+                        <span>{{ m.score_percentage }}% Potential Match</span>
+                      </div>
+                      <span class="badge {% if cand.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+                        <span class="badge-dot"></span> {{ cand.report_type|capitalize }}
+                      </span>
+                      <span class="badge badge-secondary">{{ cand.category }}</span>
+                    </div>
+
+                    <!-- Visual Similarity Meter Bar -->
+                    <div class="ai-similarity-meter">
+                      <div class="meter-track">
+                        <div class="meter-fill" style="width: {{ m.score_percentage }}%;"></div>
+                      </div>
+                    </div>
+
+                    <h4 class="ai-match-candidate-title">
+                      <a href="{{ url_for('item_detail', item_id=cand.id) }}">{{ cand.title }}</a>
+                    </h4>
+                    
+                    <p class="ai-match-candidate-desc">
+                      {{ cand.description }}
+                    </p>
+
+                    <!-- Transparent AI Match Explanation Reasons -->
+                    <div class="ai-reasons-list">
+                      {% for r in m.reasons %}
+                        <span class="ai-reason-chip">
+                          <i data-lucide="check"></i> <span>{{ r }}</span>
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="ai-match-card-action">
+                    <a href="{{ url_for('item_detail', item_id=cand.id) }}" class="btn btn-secondary btn-sm">
+                      <span>Inspect</span>
+                      <i data-lucide="arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-subtle">
+            <i data-lucide="sparkles" style="width: 28px; height: 28px; color: var(--text-light); margin-bottom: 0.5rem;"></i>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">
+              No high-confidence potential matches found in active listings at this time. Our algorithm will continue scanning as new reports are filed.
+            </p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

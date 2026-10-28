@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}Campus Lost &amp; Found Portal - Lost something on campus? Let's find it{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- Hero Section with Modern SaaS Aesthetic -->
+  <section class="hero">
+    <div class="hero-live-pill">
+      <span class="pulse-indicator"></span>
+      <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+      <span>AI-Assisted Campus Reunification Portal</span>
+    </div>
+
+    <h1 class="hero-title">
+      Lost something on campus?<br>
+      <span class="hero-gradient-text">Let's find it together.</span>
+    </h1>
+    
+    <p class="hero-subtitle">
+      A centralized, student-first platform to report lost belongings, register found items, and correlate reports instantly using local, privacy-safe text similarity AI.
+    </p>
+
+    <div class="hero-actions">
+      <a href="{{ url_for('report_lost') }}" class="btn btn-lg btn-danger-soft">
+        <i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i>
+        <span>Report Lost Item</span>
+      </a>
+      <a href="{{ url_for('report_found') }}" class="btn btn-lg btn-primary">
+        <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i>
+        <span>Report Found Item</span>
+      </a>
+    </div>
+
+    <!-- Integrated Command-Style Search Bar -->
+    <div class="hero-search-wrapper">
+      <form action="{{ url_for('browse') }}" method="GET" class="search-bar-form">
+        <div class="search-category-select-wrapper">
+          <select name="category" class="search-category-select" aria-label="Filter Category">
+            <option value="">All Categories</option>
+            {% for cat_val, cat_label in categories %}
+              <option value="{{ cat_val }}">{{ cat_label }}</option>
+            {% endfor %}
+          </select>
+          <i data-lucide="chevron-down" class="select-chevron-icon"></i>
+        </div>
+
+        <div class="search-divider"></div>
+
+        <i data-lucide="search" class="search-input-icon"></i>
+        <input 
+          type="text" 
+          name="q" 
+          class="search-bar-input" 
+          placeholder="Search by keywords, model, color, or location (e.g. Dell charger, Library 2nd floor)..."
+          autocomplete="off"
+        >
+        <button type="submit" class="btn btn-primary search-submit-btn">
+          <span>Search</span>
+          <i data-lucide="arrow-right" style="width: 15px; height: 15px;"></i>
+        </button>
+      </form>
+      <div class="search-quick-tags">
+        <span class="quick-tags-label">Popular searches:</span>
+        <a href="{{ url_for('browse', q='Student ID') }}" class="quick-tag-item">Student ID</a>
+        <a href="{{ url_for('browse', q='Charger') }}" class="quick-tag-item">Chargers</a>
+        <a href="{{ url_for('browse', q='Calculator') }}" class="quick-tag-item">Casio Calculator</a>
+        <a href="{{ url_for('browse', q='Bottle') }}" class="quick-tag-item">Water Bottles</a>
+        <a href="{{ url_for('browse', location='Library') }}" class="quick-tag-item">Central Library</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Genuine Database Statistics Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card stat-card-teal">
+        <div class="stat-header">
+          <div class="stat-icon-box teal">
+            <i data-lucide="layers"></i>
+          </div>
+          <span class="stat-trend-tag">All Time</span>
+        </div>
+        <div class="stat-value">{{ total_reports }}</div>
+        <div class="stat-label">Total Reports Filed</div>
+        <div class="stat-subtext">Cumulative campus lost &amp; found logs</div>
+      </div>
+
+      <div class="stat-card stat-card-green">
+        <div class="stat-header">
+          <div class="stat-icon-box green">
+            <i data-lucide="smile"></i>
+          </div>
+          <span class="stat-trend-tag green">Reunited</span>
+        </div>
+        <div class="stat-value">{{ reunited_count }}</div>
+        <div class="stat-label">Items Returned</div>
+        <div class="stat-subtext">Belongings safely handed over</div>
+      </div>
+
+      <div class="stat-card stat-card-rose">
+        <div class="stat-header">
+          <div class="stat-icon-box rose">
+            <i data-lucide="help-circle"></i>
+          </div>
+          <span class="stat-trend-tag rose">Searching</span>
+        </div>
+        <div class="stat-value">{{ active_lost_count }}</div>
+        <div class="stat-label">Active Lost Items</div>
+        <div class="stat-subtext">Awaiting match or finder discovery</div>
+      </div>
+
+      <div class="stat-card stat-card-amber">
+        <div class="stat-header">
+          <div class="stat-icon-box amber">
+            <i data-lucide="package-search"></i>
+          </div>
+          <span class="stat-trend-tag amber">Recovered</span>
+        </div>
+        <div class="stat-value">{{ active_found_count }}</div>
+        <div class="stat-label">Active Found Items</div>
+        <div class="stat-subtext">Safely held awaiting rightful owners</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Quick Links -->
+  <section class="categories-section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Explore by Category</h2>
+        <p class="section-desc">Quickly browse active listings across common campus belongings</p>
+      </div>
+      <a href="{{ url_for('browse') }}" class="btn btn-sm btn-secondary">
+        <span>View All Categories</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    <div class="category-chips">
+      {% for cat_val, cat_label in categories %}
+        <a href="{{ url_for('browse', category=cat_val) }}" class="category-chip">
+          <i data-lucide="tag" class="category-chip-icon"></i>
+          <span>{{ cat_label }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Recently Reported Lost Items -->
+  <section class="listings-section">
+    <div class="section-header">
+      <div>
+        <div class="section-badge-pill rose">
+          <i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>
+          <span>Needs Help</span>
+        </div>
+        <h2 class="section-title">Recently Reported Lost Items</h2>
+        <p class="section-desc">Help your fellow students locate these misplaced belongings</p>
+      </div>
+      <a href="{{ url_for('browse', type='lost') }}" class="btn btn-sm btn-secondary">
+        <span>Browse All Lost</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    {% if recent_lost %}
+      <div class="items-grid">
+        {% for item in recent_lost %}
+          <article class="item-card">
+            <div class="item-card-image-wrapper">
+              <span class="badge badge-lost item-card-type-badge">
+                <span class="badge-dot"></span> Lost
+              </span>
+              <span class="badge {{ item.status_badge_class }} item-card-status-badge">
+                {{ item.status.replace('_', ' ') }}
+              </span>
+              <img 
+                src="{% if item.image_filename %}{{ url_for('uploaded_file', filename=item.image_filename) }}{% else %}{{ url_for('static', filename='images/placeholder.svg') }}{% endif %}" 
+                alt="{{ item.title }}" 
+                class="item-card-image{% if not item.image_filename %} is-placeholder{% endif %}"
+                loading="lazy"
+                onerror="this.onerror=null; this.classList.add('is-placeholder'); this.src='{{ url_for('static', filename='images/placeholder.svg') }}';"
+              >
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-category-row">
+                <span class="item-card-category">{{ item.category }}</span>
+              </div>
+              <h3 class="item-card-title">
+                <a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.title }}</a>
+              </h3>
+              <p class="item-card-desc">{{ item.description }}</p>
+
+              <div class="item-card-meta">
+                <div class="item-card-meta-row">
+                  <i data-lucide="map-pin"></i>
+                  <span>{{ item.location }}</span>
+                </div>
+                <div class="item-card-meta-row">
+                  <i data-lucide="calendar"></i>
+                  <span>Lost {{ item.incident_date.strftime('%b %d, %Y') }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-card-footer">
+              <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-secondary btn-block btn-sm">
+                <span>View Details &bull; I Found This</span>
+                <i data-lucide="chevron-right"></i>
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon-box">
+          <i data-lucide="check-circle-2"></i>
+        </div>
+        <h3 class="empty-title">No Active Lost Items</h3>
+        <p class="empty-desc">Great news! There are currently no active lost items reported. Lost something recently?</p>
+        <a href="{{ url_for('report_lost') }}" class="btn btn-danger btn-sm">Report a Lost Item</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Recently Reported Found Items -->
+  <section class="listings-section">
+    <div class="section-header">
+      <div>
+        <div class="section-badge-pill teal">
+          <i data-lucide="check-circle-2" style="width: 13px; height: 13px;"></i>
+          <span>Unclaimed Property</span>
+        </div>
+        <h2 class="section-title">Recently Reported Found Items</h2>
+        <p class="section-desc">Items safely recovered across campus waiting for their rightful owners</p>
+      </div>
+      <a href="{{ url_for('browse', type='found') }}" class="btn btn-sm btn-secondary">
+        <span>Browse All Found</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    {% if recent_found %}
+      <div class="items-grid">
+        {% for item in recent_found %}
+          <article class="item-card">
+            <div class="item-card-image-wrapper">
+              <span class="badge badge-found item-card-type-badge">
+                <span class="badge-dot"></span> Found
+              </span>
+              <span class="badge {{ item.status_badge_class }} item-card-status-badge">
+                {{ item.status.replace('_', ' ') }}
+              </span>
+              <img 
+                src="{% if item.image_filename %}{{ url_for('uploaded_file', filename=item.image_filename) }}{% else %}{{ url_for('static', filename='images/placeholder.svg') }}{% endif %}" 
+                alt="{{ item.title }}" 
+                class="item-card-image{% if not item.image_filename %} is-placeholder{% endif %}"
+                loading="lazy"
+                onerror="this.onerror=null; this.classList.add('is-placeholder'); this.src='{{ url_for('static', filename='images/placeholder.svg') }}';"
+              >
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-category-row">
+                <span class="item-card-category">{{ item.category }}</span>
+              </div>
+              <h3 class="item-card-title">
+                <a href="{{ url_for('item_detail', item_id=item.id) }}">{{ item.title }}</a>
+              </h3>
+              <p class="item-card-desc">{{ item.description }}</p>
+
+              <div class="item-card-meta">
+                <div class="item-card-meta-row">
+                  <i data-lucide="map-pin"></i>
+                  <span>{{ item.location }}</span>
+                </div>
+                <div class="item-card-meta-row">
+                  <i data-lucide="calendar"></i>
+                  <span>Found on {{ item.incident_date.strftime('%b %d, %Y') }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-card-footer">
+              <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-secondary btn-block btn-sm">
+                <span>View Details &bull; Claim Item</span>
+                <i data-lucide="chevron-right"></i>
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon-box">
+          <i data-lucide="inbox"></i>
+        </div>
+        <h3 class="empty-title">No Active Found Items</h3>
+        <p class="empty-desc">No unclaimed items have been turned in yet. Found an item on campus?</p>
+        <a href="{{ url_for('report_found') }}" class="btn btn-primary btn-sm">Report a Found Item</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- How It Works (3 Steps) with Connected SaaS Cards -->
+  <section class="steps-section" id="how-it-works">
+    <div class="steps-header">
+      <div class="hero-live-pill" style="margin-bottom: 0.75rem;">
+        <i data-lucide="git-merge" style="width: 14px; height: 14px;"></i>
+        <span>Streamlined Workflow</span>
+      </div>
+      <h2 class="section-title">How Campus Reunification Works</h2>
+      <p class="section-desc">A transparent 3-step process to securely recover lost belongings without public exposure</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-badge-number">01</div>
+        <div class="step-icon-wrapper">
+          <i data-lucide="file-plus"></i>
+        </div>
+        <h3 class="step-title">1. Report with Vault</h3>
+        <p class="step-desc">
+          File a lost or found report. Put public descriptions on the listing, and lock secret identifying marks (serial numbers, hidden scratches) in your confidential vault.
+        </p>
+      </div>
+
+      <div class="step-card featured">
+        <div class="step-badge-number">02</div>
+        <div class="step-icon-wrapper">
+          <i data-lucide="cpu"></i>
+        </div>
+        <h3 class="step-title">2. Local AI Matching</h3>
+        <p class="step-desc">
+          Our local TF-IDF text similarity engine scans descriptions, categories, dates, and locations to suggest high-probability potential matches with honest reasons.
+        </p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-badge-number">03</div>
+        <div class="step-icon-wrapper">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <h3 class="step-title">3. Verify &amp; Handover</h3>
+        <p class="step-desc">
+          Claimants submit ownership proof. The finder verifies the claimant's explanation against the vault details, approves the claim, and finalizes the handover!
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

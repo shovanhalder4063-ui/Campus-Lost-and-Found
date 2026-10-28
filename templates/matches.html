@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}AI Matching Explorer - Campus Lost &amp; Found{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 2rem;">
+
+  <!-- Header -->
+  <div class="section-header" style="margin-bottom: 1.5rem;">
+    <div>
+      <div class="hero-live-pill" style="margin-bottom: 0.35rem;">
+        <i data-lucide="cpu" style="width: 13px; height: 13px;"></i>
+        <span>Local Machine Learning Engine</span>
+      </div>
+      <h1 class="section-title">AI Matching Hub</h1>
+      <p class="section-desc">
+        Explore automated match suggestions computed locally via TF-IDF vectorization, Cosine Similarity, and contextual campus heuristics.
+      </p>
+    </div>
+  </div>
+
+  <!-- Transparent Algorithm Notice Card -->
+  <div class="algorithm-info-banner">
+    <div class="algorithm-info-icon">
+      <i data-lucide="info"></i>
+    </div>
+    <div class="algorithm-info-content">
+      <strong>Transparent Heuristic Similarity Scoring:</strong> Matches are computed using local scikit-learn text similarity on public descriptions, augmented by category agreement ($+15\%$), location token matching ($+8\text{--}12\%$), and incident date proximity ($+2\text{--}8\%$). All recommendations are designated as <strong>Potential Matches</strong> to assist student verification and do not represent confirmed ownership.
+    </div>
+  </div>
+
+  {% if user_items %}
+    <!-- Item Selector Form -->
+    <div class="filter-card" style="margin-bottom: 2rem;">
+      <form action="{{ url_for('matches_explorer') }}" method="GET" class="matches-selector-form">
+        <div style="flex: 1; min-width: 280px;">
+          <label class="form-label" for="item_id" style="font-size: 0.95rem; font-weight: 700;">
+            Select one of your active listings to inspect AI recommendations:
+          </label>
+          <div class="select-wrapper">
+            <select name="item_id" id="item_id" class="form-select" onchange="this.form.submit()">
+              {% for itm in user_items %}
+                <option value="{{ itm.id }}" {% if selected_item and selected_item.id == itm.id %}selected{% endif %}>
+                  [{{ itm.report_type|upper }}] {{ itm.title }} &bull; {{ itm.category }} ({{ itm.location }})
+                </option>
+              {% endfor %}
+            </select>
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 1.7rem;">
+          <i data-lucide="sparkles"></i> <span>Re-evaluate Matches</span>
+        </button>
+      </form>
+    </div>
+
+    {% if selected_item %}
+      <!-- Selected Target Item Overview Card -->
+      <div class="matches-target-card">
+        <div class="matches-target-header">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="badge {% if selected_item.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+              <span class="badge-dot"></span> Target: {{ selected_item.report_type|capitalize }}
+            </span>
+            <span class="badge badge-secondary">{{ selected_item.category }}</span>
+          </div>
+          <a href="{{ url_for('item_detail', item_id=selected_item.id) }}" class="btn btn-sm btn-secondary">
+            <span>View Source Listing</span>
+            <i data-lucide="external-link"></i>
+          </a>
+        </div>
+
+        <h2 class="matches-target-title">{{ selected_item.title }}</h2>
+        <p class="matches-target-desc">{{ selected_item.description }}</p>
+
+        <div class="matches-target-meta">
+          <div class="matches-meta-chip">
+            <i data-lucide="map-pin"></i>
+            <span><strong>Location:</strong> {{ selected_item.location }}</span>
+          </div>
+          <div class="matches-meta-chip">
+            <i data-lucide="calendar"></i>
+            <span><strong>Incident Date:</strong> {{ selected_item.incident_date.strftime('%B %d, %Y') }}</span>
+          </div>
+          <div class="matches-meta-chip">
+            <i data-lucide="clock"></i>
+            <span>Reported {{ selected_item.created_at.strftime('%b %d, %Y') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ranked Match Candidates Section -->
+      <div class="section-header" style="margin-bottom: 1.25rem;">
+        <div>
+          <h3 class="section-title" style="font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="list-ordered" style="width: 18px; height: 18px; color: var(--primary);"></i>
+            <span>Ranked Recommendations from Active {% if selected_item.report_type == 'lost' %}Found{% else %}Lost{% endif %} Listings ({{ matches|length }})</span>
+          </h3>
+          <p class="section-desc">Sorted by combined TF-IDF text similarity and contextual relevance</p>
+        </div>
+      </div>
+
+      {% if matches %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          {% for m in matches %}
+            {% set cand = m.item %}
+            <div class="ai-match-card" style="padding: 1.5rem;">
+              <div class="ai-match-card-inner">
+                <div class="ai-match-card-content">
+                  
+                  <div class="ai-match-top-row">
+                    <span class="ai-score-pill">
+                      <i data-lucide="activity"></i>
+                      <span>{{ m.score_percentage }}% Potential Match</span>
+                    </span>
+                    <span class="badge {% if cand.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+                      <span class="badge-dot"></span> {{ cand.report_type|capitalize }}
+                    </span>
+                    <span class="badge badge-secondary">{{ cand.category }}</span>
+                  </div>
+
+                  <!-- Similarity Progress Meter -->
+                  <div class="ai-similarity-meter">
+                    <div class="meter-track">
+                      <div class="meter-fill" style="width: {{ m.score_percentage }}%;"></div>
+                    </div>
+                  </div>
+
+                  <h4 class="ai-match-candidate-title">
+                    <a href="{{ url_for('item_detail', item_id=cand.id) }}">{{ cand.title }}</a>
+                  </h4>
+
+                  <p class="ai-match-candidate-desc">
+                    {{ cand.description }}
+                  </p>
+
+                  <div class="item-card-meta" style="border: none; padding: 0; margin-bottom: 0.75rem; flex-direction: row; flex-wrap: wrap; gap: 1.25rem;">
+                    <div class="item-card-meta-row">
+                      <i data-lucide="map-pin"></i> <span>{{ cand.location }}</span>
+                    </div>
+                    <div class="item-card-meta-row">
+                      <i data-lucide="calendar"></i> <span>{{ cand.incident_date.strftime('%b %d, %Y') }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Honest Breakdown Chips -->
+                  <div>
+                    <span class="similarity-factors-heading">Similarity Factors:</span>
+                    <div class="ai-reasons-list">
+                      {% for r in m.reasons %}
+                        <span class="ai-reason-chip">
+                          <i data-lucide="check"></i> <span>{{ r }}</span>
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ai-match-card-action">
+                  <a href="{{ url_for('item_detail', item_id=cand.id) }}" class="btn btn-primary">
+                    <span>Inspect Match Details</span>
+                    <i data-lucide="arrow-right"></i>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon-box"><i data-lucide="search"></i></div>
+          <h3 class="empty-title">No Strong Matches Identified</h3>
+          <p class="empty-desc">
+            None of the currently active {% if selected_item.report_type == 'lost' %}found{% else %}lost{% endif %} reports reached the minimum relevance threshold for "{{ selected_item.title }}".
+          </p>
+        </div>
+      {% endif %}
+
+    {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon-box"><i data-lucide="sparkles"></i></div>
+      <h3 class="empty-title">No Active Listings to Match</h3>
+      <p class="empty-desc">
+        To use the AI matching engine, you first need to report at least one active lost or found item.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 0.75rem;">
+        <a href="{{ url_for('report_lost') }}" class="btn btn-danger-soft btn-sm">Report Lost Item</a>
+        <a href="{{ url_for('report_found') }}" class="btn btn-primary btn-sm">Report Found Item</a>
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Listing #{{ item.id }} - Campus Lost &amp; Found{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 780px; padding-top: 2rem;">
+
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-sm btn-secondary">
+      <i data-lucide="arrow-left"></i> <span>Back to Listing</span>
+    </a>
+  </div>
+
+  <div class="form-container-card">
+    
+    <div class="form-card-header">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+        <span class="badge {% if item.report_type == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+          <span class="badge-dot"></span> Edit {{ item.report_type|capitalize }} Listing #{{ item.id }}
+        </span>
+      </div>
+      <h1 class="form-card-title">Edit Listing Details</h1>
+      <p class="form-card-subtitle">
+        Update title, public description, or confidential verification marks for this campus report.
+      </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+
+      <div class="form-group">
+        <label class="form-label" for="title">{{ form.title.label.text }}</label>
+        <div class="input-icon-wrapper">
+          <i data-lucide="type" class="field-icon"></i>
+          {{ form.title(class="form-control with-icon") }}
+        </div>
+        {% if form.title.errors %}
+          {% for error in form.title.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="category">{{ form.category.label.text }}</label>
+          <div class="select-wrapper">
+            {{ form.category(class="form-select") }}
+            <i data-lucide="chevron-down" class="select-chevron"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="incident_date">Incident Date</label>
+          <div class="input-icon-wrapper">
+            <i data-lucide="calendar" class="field-icon"></i>
+            {{ form.incident_date(class="form-control with-icon", type="date") }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="location">{{ form.location.label.text }}</label>
+        <div class="input-icon-wrapper">
+          <i data-lucide="map-pin" class="field-icon"></i>
+          {{ form.location(class="form-control with-icon") }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">{{ form.description.label.text }}</label>
+        {{ form.description(class="form-control") }}
+      </div>
+
+      <!-- Current Image & Replacement -->
+      <div class="form-group">
+        <label class="form-label" for="image">Replace Item Photograph (Optional)</label>
+        {% if item.image_filename %}
+          <div style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
+            <img src="{{ url_for('uploaded_file', filename=item.image_filename) }}" 
+                 alt="Current Photo" 
+                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder.svg') }}';"
+                 style="width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Current photograph on file</span>
+          </div>
+        {% else %}
+          <div style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+            <i data-lucide="image-off" style="width: 16px; height: 16px;"></i>
+            <span>No photograph currently on file. You can upload one below.</span>
+          </div>
+        {% endif %}
+        <div class="file-upload-dropzone">
+          <div class="dropzone-content">
+            <div class="dropzone-icon">
+              <i data-lucide="camera"></i>
+            </div>
+            <div class="dropzone-text">
+              <strong>Upload replacement photograph</strong>
+            </div>
+            <div class="dropzone-subtext">JPG, PNG, WebP up to 5MB (leave empty to keep existing)</div>
+          </div>
+          {{ form.image(class="file-input-hidden", id="image") }}
+        </div>
+        {% if form.image.errors %}
+          {% for error in form.image.errors %}
+            <div class="form-error"><i data-lucide="alert-circle" style="width: 12px; height: 12px; display: inline;"></i> {{ error }}</div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- Private Details Box -->
+      <div class="confidential-form-card">
+        <div class="confidential-form-header">
+          <div class="confidential-icon-pill">
+            <i data-lucide="lock"></i>
+          </div>
+          <div>
+            <div class="confidential-title">Private Ownership Verification Vault (Confidential)</div>
+            <div class="confidential-subtitle">NEVER DISPLAYED ON THE PUBLIC WEBSITE</div>
+          </div>
+        </div>
+        {{ form.private_details(class="form-control confidential-textarea") }}
+      </div>
+
+      <div class="form-action-row">
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i data-lucide="save"></i> <span>Save Changes</span>
+        </button>
+        <a href="{{ url_for('item_detail', item_id=item.id) }}" class="btn btn-secondary btn-lg">Cancel</a>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

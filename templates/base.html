@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>{% block title %}Campus Lost &amp; Found Portal{% endblock %} | Campus L&amp;F</title>
+  <meta name="description" content="A modern, AI-assisted lost and found web portal for college students and campus community.">
+  
+  <!-- Premium Modern Typography (Plus Jakarta Sans & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Modern Clean Design Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <!-- Lucide Icons via unpkg -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="{{ url_for('index') }}" class="brand">
+        <div class="brand-icon">
+          <i data-lucide="compass"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Campus<span class="brand-accent">L&amp;F</span></span>
+          <span class="brand-tag">STUDENT PORTAL</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav>
+        <ul class="nav-links">
+          <li>
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+              <i data-lucide="home"></i> Home
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('browse') }}" class="nav-link {% if request.endpoint == 'browse' %}active{% endif %}">
+              <i data-lucide="search"></i> Browse Items
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('index') }}#how-it-works" class="nav-link">
+              <i data-lucide="help-circle"></i> How It Works
+            </a>
+          </li>
+          {% if current_user.is_authenticated %}
+          <li>
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+              <i data-lucide="layout-dashboard"></i> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('matches_explorer') }}" class="nav-link {% if request.endpoint == 'matches_explorer' %}active{% endif %}">
+              <i data-lucide="sparkles" style="color: var(--primary);"></i> AI Matches
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+
+      <!-- Header Action Buttons -->
+      <div class="nav-actions">
+        {% if current_user.is_authenticated %}
+          <div class="user-menu-pill">
+            <div class="user-avatar" title="{{ current_user.name }}">
+              {{ current_user.name[:1]|upper }}
+            </div>
+            <div class="user-info-text">
+              <span class="user-name">{{ current_user.safe_display_name }}</span>
+              <span class="user-role-badge">{% if current_user.is_admin %}Admin{% else %}Student{% endif %}</span>
+            </div>
+          </div>
+          <div class="header-action-group">
+            <a href="{{ url_for('report_lost') }}" class="btn btn-sm btn-outline-lost" title="Report a Lost Belonging">
+              <i data-lucide="alert-circle"></i> <span>Lost</span>
+            </a>
+            <a href="{{ url_for('report_found') }}" class="btn btn-sm btn-primary" title="Report a Found Item">
+              <i data-lucide="check-circle"></i> <span>Found</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-ghost" title="Sign Out">
+              <i data-lucide="log-out"></i>
+            </a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-sm btn-secondary">Sign In</a>
+          <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary">Create Account</a>
+        {% endif %}
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-toggle-btn" id="navToggleBtn" aria-label="Toggle Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div class="navbar-mobile-menu" id="navbarMobileMenu">
+      <div class="container mobile-menu-inner">
+        {% if current_user.is_authenticated %}
+          <div class="mobile-user-card">
+            <div class="user-avatar large">
+              {{ current_user.name[:1]|upper }}
+            </div>
+            <div>
+              <div style="font-weight: 700; color: var(--text-main);">{{ current_user.name }}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">{{ current_user.email }}</div>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="mobile-nav-links">
+          <a href="{{ url_for('index') }}" class="mobile-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+            <i data-lucide="home"></i> Home
+          </a>
+          <a href="{{ url_for('browse') }}" class="mobile-nav-item {% if request.endpoint == 'browse' %}active{% endif %}">
+            <i data-lucide="search"></i> Browse All Listings
+          </a>
+          <a href="{{ url_for('index') }}#how-it-works" class="mobile-nav-item">
+            <i data-lucide="help-circle"></i> How It Works
+          </a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard') }}" class="mobile-nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+              <i data-lucide="layout-dashboard"></i> My Dashboard
+            </a>
+            <a href="{{ url_for('matches_explorer') }}" class="mobile-nav-item {% if request.endpoint == 'matches_explorer' %}active{% endif %}">
+              <i data-lucide="sparkles"></i> AI Matches Hub
+            </a>
+            <div class="mobile-action-buttons">
+              <a href="{{ url_for('report_lost') }}" class="btn btn-sm btn-outline-lost btn-block">
+                <i data-lucide="alert-circle"></i> Report Lost Item
+              </a>
+              <a href="{{ url_for('report_found') }}" class="btn btn-sm btn-primary btn-block">
+                <i data-lucide="check-circle"></i> Report Found Item
+              </a>
+              <a href="{{ url_for('logout') }}" class="btn btn-sm btn-secondary btn-block" style="color: var(--accent-lost);">
+                <i data-lucide="log-out"></i> Sign Out
+              </a>
+            </div>
+          {% else %}
+            <div class="mobile-action-buttons" style="margin-top: 1rem;">
+              <a href="{{ url_for('login') }}" class="btn btn-secondary btn-block">Sign In</a>
+              <a href="{{ url_for('register') }}" class="btn btn-primary btn-block">Create Account</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Notifications -->
+  <div class="container flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" role="alert">
+            <div class="alert-content">
+              <i data-lucide="{% if category == 'success' %}check-circle-2{% elif category == 'danger' %}alert-octagon{% elif category == 'warning' %}alert-triangle{% else %}info{% endif %}" class="alert-icon"></i>
+              <span>{{ message }}</span>
+            </div>
+            <button class="alert-close" aria-label="Dismiss">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main View Container -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Shared Modern Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col-main">
+          <div class="footer-brand">
+            <div class="brand-icon small">
+              <i data-lucide="compass"></i>
+            </div>
+            <span class="brand-name">Campus<span class="brand-accent">L&amp;F</span></span>
+          </div>
+          <p class="footer-desc">
+            A centralized, privacy-first university portal connecting lost belongings with their owners using lightweight, local text similarity and transparent ownership verification.
+          </p>
+          <div class="footer-badge-strip">
+            <span class="footer-tech-tag"><i data-lucide="cpu" style="width: 12px; height: 12px;"></i> Local scikit-learn AI</span>
+            <span class="footer-tech-tag"><i data-lucide="shield-check" style="width: 12px; height: 12px;"></i> Private Vault</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="footer-heading">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('browse') }}"><i data-lucide="chevron-right"></i> Browse Listings</a></li>
+            <li><a href="{{ url_for('report_lost') }}"><i data-lucide="chevron-right"></i> Report Lost Item</a></li>
+            <li><a href="{{ url_for('report_found') }}"><i data-lucide="chevron-right"></i> Report Found Item</a></li>
+            <li><a href="{{ url_for('index') }}#how-it-works"><i data-lucide="chevron-right"></i> How It Works</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-heading">Privacy &amp; Security</h4>
+          <p class="footer-security-note">
+            Student privacy is strictly protected. Personal emails, phone numbers, and confidential verification details remain invisible to the public and are used exclusively to confirm physical handovers.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; {{ current_year }} Campus Lost &amp; Found Portal &bull; Academic Prototype</div>
+        <div class="footer-meta">B.Tech CSE (Data Science) Project</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
