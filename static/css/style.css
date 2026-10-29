@@ -1135,6 +1135,7 @@ img {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .item-card-category-row {
@@ -1195,6 +1196,12 @@ img {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
+}
+
+.item-card-meta-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .item-card-meta-row i {
@@ -1450,6 +1457,8 @@ img {
   gap: 0.4rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .active-crumb {
@@ -1461,6 +1470,11 @@ img {
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 2.25rem;
+}
+
+.detail-sidebar,
+.detail-main-column {
+  min-width: 0;
 }
 
 .detail-gallery {
@@ -1523,6 +1537,7 @@ img {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.85rem;
+  flex-wrap: wrap;
 }
 
 .trust-badge {
@@ -1601,6 +1616,7 @@ img {
   font-size: 2.15rem;
   font-weight: 800;
   margin-bottom: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .detail-meta-strip {
@@ -1615,6 +1631,12 @@ img {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
+}
+
+.detail-meta-item span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .meta-icon {
@@ -2151,6 +2173,7 @@ img {
   display: flex;
   align-items: center;
   gap: 1.25rem;
+  min-width: 0;
 }
 
 .dashboard-user-title {
@@ -2162,11 +2185,13 @@ img {
 .dashboard-user-subtitle {
   font-size: 0.88rem;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .dashboard-actions-footer {
   display: flex;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .dashboard-ai-group-card {
@@ -2452,6 +2477,7 @@ img {
 .preview-meta-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .preview-label {
@@ -2732,9 +2758,93 @@ img {
 @media (max-width: 768px) {
   .nav-links, .nav-actions { display: none; }
   .nav-toggle-btn { display: block; }
+
+  .browse-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .browse-header-row > * {
+    min-width: 0;
+  }
+
+  .browse-header-row .header-action-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .browse-header-row .header-action-group .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .detail-nav-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .detail-nav-crumbs {
+    max-width: 100%;
+  }
+
+  .detail-layout > * {
+    min-width: 0;
+  }
+
+  .section-header,
+  .results-meta-bar,
+  .claims-header-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .results-meta-bar > * {
+    max-width: 100%;
+  }
+
+  .detail-content-card {
+    padding: 1.25rem;
+  }
+
+  .detail-meta-strip {
+    gap: 0.75rem;
+  }
+
+  .dashboard-user-info {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .dashboard-user-info > div:last-child {
+    min-width: 0;
+  }
+
+  .dashboard-user-info > div:last-child > div:first-child {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-actions-footer {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-actions-footer > form {
+    flex: 1 1 auto;
+  }
+
+  .search-bar-form {
+    align-items: stretch;
+  }
+
+  .search-bar-input {
+    width: 100%;
+    min-width: 0;
+  }
   
   .hero { padding: 3rem 1rem 2rem; }
-  .hero-title { font-size: 2rem; }
+  .hero-title { font-size: clamp(1.75rem, 8vw, 2rem); }
   .hero-subtitle { font-size: 1rem; }
   .hero-actions { flex-direction: column; gap: 0.75rem; }
   
@@ -2752,6 +2862,33 @@ img {
   .items-grid { grid-template-columns: 1fr; }
   .filter-grid { grid-template-columns: 1fr; }
   .form-row-2col { grid-template-columns: 1fr; }
+  .filter-card,
+  .form-container-card,
+  .auth-card,
+  .confidential-form-card,
+  .claim-submission-card,
+  .matches-target-card,
+  .dashboard-user-header,
+  .dashboard-ai-group-card {
+    padding: 1.25rem;
+  }
+
+  .filter-actions-col {
+    width: 100%;
+  }
+
+  .filter-actions-col > :first-child {
+    flex: 1;
+  }
+
+  .form-action-row {
+    flex-wrap: wrap;
+  }
+
+  .footer-badge-strip {
+    flex-wrap: wrap;
+  }
+
   .dashboard-user-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .ai-match-card-inner { flex-direction: column; }
   .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
